@@ -67,3 +67,15 @@ Nếu D1 đã được khởi tạo ở bản trước, chạy lại `sql/schema
 - Nếu đã chạy schema bản trước, chạy lại schema mới (INSERT OR IGNORE không xóa ảnh cũ).
 - Sau khi tạo D1/R2, gắn bindings và secrets, deploy lại Pages; chưa có ảnh cho tới khi admin upload.
 - Không upload bảng giá phòng có giá như ảnh giới thiệu công khai nếu muốn ẩn giá hoàn toàn.
+
+
+## v1.4 – Chặn upload vượt hạn mức ứng dụng (BẮT BUỘC đọc)
+- Trước khi deploy v1.4: chạy `sql/upgrade-v1.4.sql` trong **D1 Console**. Không chạy nếu R2 đã có ảnh mà chưa kiểm kê dung lượng.
+- API chỉ cho admin upload; giới hạn **15 MiB mỗi ảnh**, preview tối đa **2 MiB**, chấp nhận JPEG/PNG/WebP/GIF theo chữ ký file.
+- D1 giữ `used_bytes` và `reserved_bytes`, dùng UPDATE có điều kiện nguyên tử để từ chối upload nếu vượt **8.000.000.000 byte**. API `/api/quota` chỉ admin xem.
+- Chặn trên server, không chỉ trên giao diện. Khi có lỗi, hạn mức có thể bị giữ lại để tránh đếm thiếu; **không tự ý reset quota về 0**. Khi xóa ảnh, dung lượng cũng không được hoàn lại tự động: cần đối chiếu R2 thực tế trước khi điều chỉnh quota.
+- **Không phải hạn mức chi tiêu cứng của Cloudflare**: tài khoản vẫn có thể bị tính phí do request, dữ liệu ngoài ứng dụng, hoặc truy cập bị lạm dụng. Cần thêm WAF/rate limiting cho `/api/login`, `/api/upload`, `/api/photo`; bật cảnh báo Billing, giới hạn quyền tài khoản và bảo vệ Cloudflare/GitHub bằng MFA.
+- Không dùng album private cho ảnh nhạy cảm ở bản này: mật khẩu album vẫn truyền qua URL và có thể bị lộ.
+- Khi upload lỗi giữa chừng, kiểm tra R2/D1, không xóa hàng loạt object hay sửa số đếm tùy tiện.
+- Để khóa chặt upload khi cần, đặt Cloudflare WAF rule chặn POST `/api/upload` hoặc tạm thời gỡ binding PHOTOS (sẽ ngừng xem ảnh).
+- Kiểm thử sau deploy: không đăng nhập upload phải 401; file giả ảnh phải 415; ảnh >15 MiB phải 413; D1 chưa migration phải từ chối upload; giới hạn 8 GB phải từ chối 507.
