@@ -699,3 +699,80 @@ $('#upload').onclick = async () => {
 t();
 refresh();
 auth();
+
+/* SAO MAI - XOA NHIEU ANH DA CHON */
+
+const deleteSelectedBtn = document.querySelector('#deleteSelected');
+
+if (deleteSelectedBtn) {
+  const updateDeleteButton = () => {
+    deleteSelectedBtn.classList.toggle('hidden', !admin);
+    const count = document.querySelectorAll('.pick:checked').length;
+    deleteSelectedBtn.textContent = `Xóa ${count} ảnh đã chọn`;
+    deleteSelectedBtn.disabled = !admin || count === 0;
+  };
+
+  // Cập nhật nút khi chọn hoặc bỏ chọn ảnh.
+  document.addEventListener('change', event => {
+    if (event.target.matches('.pick')) {
+      updateDeleteButton();
+    }
+  });
+
+  // Theo dõi thay đổi trạng thái đăng nhập và danh sách ảnh.
+  const observer = new MutationObserver(updateDeleteButton);
+  observer.observe(document.querySelector('#adminTools'), {
+    attributes: true,
+    attributeFilter: ['class']
+  });
+  observer.observe(document.querySelector('#photoGrid'), {
+    childList: true
+  });
+
+  document.querySelector('#selectAll')
+    .addEventListener('click', () => {
+      queueMicrotask(updateDeleteButton);
+    });
+
+  deleteSelectedBtn.addEventListener('click', async () => {
+    if (!admin) return notice('Cần đăng nhập quản trị');
+
+    const ids = [
+      ...document.querySelectorAll('.pick:checked')
+    ].map(input => input.dataset.id);
+
+    if (!ids.length) return notice('Chưa chọn ảnh');
+
+    if (!confirm(
+      `Bạn có chắc muốn xóa vĩnh viễn ${ids.length} ảnh đã chọn?\n\nHành động này không thể hoàn tác.`
+    )) return;
+
+    deleteSelectedBtn.disabled = true;
+
+    let deleted = 0;
+    let failed = 0;
+
+    for (const id of ids) {
+      try {
+        await req('/photo?id=' + encodeURIComponent(id), {
+          method: 'DELETE'
+        });
+        deleted++;
+      } catch (error) {
+        failed++;
+        console.error('Không xóa được ảnh:', id, error);
+      }
+    }
+
+    notice(`Đã xóa ${deleted} ảnh. Lỗi: ${failed} ảnh.`);
+
+    if (active) {
+      await openAlbum(active);
+      await refresh();
+    }
+
+    updateDeleteButton();
+  });
+
+  updateDeleteButton();
+}
