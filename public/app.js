@@ -1,20 +1,634 @@
-const $=s=>document.querySelector(s), api='/api';let albums=[],photos=[],active=null,admin=false,viewerIndex=0,albumPassword='';
-const translations={vi:['Thư viện hình ảnh','Khám phá không gian nghỉ dưỡng, hội nghị và thể thao','Không gian & dịch vụ','Album sự kiện','Quản trị','Trở về','Chọn tất cả','Tải ảnh đã chọn (ZIP)'],en:['Photo Gallery','Discover our resort, event venues and sports facilities','Spaces & Services','Event Albums','Admin','Back','Select all','Download selected (ZIP)'],zh:['图片画廊','探索度假村、会议场地与运动设施','场地与服务','活动相册','管理','返回','全选','下载所选照片 (ZIP)'],ko:['사진 갤러리','리조트, 행사장 및 스포츠 시설을 만나보세요','공간 및 서비스','이벤트 앨범','관리자','뒤로','모두 선택','선택한 사진 ZIP 다운로드']};
-function t(){const v=translations[$('#lang').value];['#heroTitle','#heroDesc','#serviceTitle','#eventTitle','#adminBtn','#back','#selectAll','#downloadZip'].forEach((id,i)=>$(id).textContent=v[i])}$('#lang').onchange=t;
-function notice(s){$('#notice').textContent=s;setTimeout(()=>{if($('#notice').textContent===s)$('#notice').textContent=''},7000)}
-async function req(path,opt){const r=await fetch(api+path,opt);const j=await r.json();if(!r.ok)throw Error(j.error||'Lỗi kết nối');return j}
-function el(tag,cls,text){const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=text;return x}
-function photoURL(p,original=false,download=false){let s=`${api}/photo?id=${encodeURIComponent(p.id)}`;if(original)s+='&original=1';if(download)s+='&download=1';return s}
-async function refresh(){try{albums=(await req('/albums')).albums;const g=$('#serviceGrid'),e=$('#eventGrid'),rg=$('#roomTypesGrid');g.replaceChildren();e.replaceChildren();rg.replaceChildren();$('#uploadAlbum').replaceChildren();for(const a of albums){const card=el('div','tile'),cover=el('div','cover',a.category==='events'?'✦':({center1:'01',center2:'02',rooms:'⌂',pickleball:'◉',tennis:'◉','vip-dining':'✧',gym:'◆',pool:'≈',poolside:'♨'}[a.id]||'✦')),body=el('div','body'),h=el('h3','',a.title),small=el('div','muted',(a.category==='room-types'&&a.description?a.description+' · ':'')+a.count+' ảnh');card.append(cover,body);body.append(h,small);card.onclick=()=>a.id==='rooms'?openRoomTypes():openAlbum(a);(a.category==='events'?e:a.category==='room-types'?rg:g).append(card);const o=document.createElement('option');o.value=a.id;o.textContent=a.title;$('#uploadAlbum').append(o)} }catch(e){notice(e.message)}}
-async function openAlbum(a,pw=''){active=a;albumPassword='';try{if(pw)await req('/album-access',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:a.id,password:pw})});const d=await req('/album?id='+encodeURIComponent(a.id));photos=d.photos;$('#home').classList.add('hidden');$('#roomTypesView').classList.add('hidden');$('#albumView').classList.remove('hidden');$('#albumTitle').textContent=a.title;$('#albumDesc').textContent=d.album.description||'';const grid=$('#photoGrid');grid.replaceChildren();for(const [i,p] of photos.entries()){const tile=el('div','tile'),img=document.createElement('img');img.loading='lazy';img.src=photoURL(p);img.alt=p.filename;img.onclick=()=>view(i);const body=el('div','body'),name=el('div','muted',p.filename),actions=el('div','photo-actions'),check=document.createElement('input'),btn=el('button','secondary','↓');check.type='checkbox';check.className='pick';check.dataset.id=p.id;check.onchange=updateCount;btn.onclick=()=>window.open(photoURL(p,true,true),'_blank');actions.append(check,btn);if(admin){const del=el('button','secondary','X');del.onclick=async()=>{if(confirm('Xóa ảnh này?')){try{await req('/photo?id='+encodeURIComponent(p.id),{method:'DELETE'});openAlbum(a,albumPassword)}catch(e){notice(e.message)}}};actions.append(del)}body.append(name,actions);tile.append(img,body);grid.append(tile)}updateCount()}catch(e){if(String(e.message).includes('mật khẩu')){const input=prompt('Nhập mật khẩu album');if(input!==null)return openAlbum(a,input)}notice(e.message)}}
-function openRoomTypes(){$('#home').classList.add('hidden');$('#albumView').classList.add('hidden');$('#roomTypesView').classList.remove('hidden');if(!albums.some(a=>a.category==='room-types'))$('#roomTypesGrid').textContent='Chưa có hạng phòng. Quản trị viên có thể tạo từng hạng phòng trong mục Quản trị.'}
-$('#roomBack').onclick=()=>{$('#roomTypesView').classList.add('hidden');$('#home').classList.remove('hidden')};
-function updateCount(){$('#selectedCount').textContent=document.querySelectorAll('.pick:checked').length+' / '+photos.length}
-$('#back').onclick=()=>{$('#albumView').classList.add('hidden');$('#home').classList.remove('hidden');active=null;albumPassword='';refresh()};$('#selectAll').onclick=()=>{const cs=[...document.querySelectorAll('.pick')],all=cs.every(x=>x.checked);cs.forEach(x=>x.checked=!all);updateCount()};
-function view(i){viewerIndex=i;$('#bigImage').src=photoURL(photos[i],true);$('#viewer').classList.remove('hidden')}function move(n){viewerIndex=(viewerIndex+n+photos.length)%photos.length;view(viewerIndex)}$('.close').onclick=()=>$('#viewer').classList.add('hidden');$('.prev').onclick=()=>move(-1);$('.next').onclick=()=>move(1);$('#viewer').onclick=e=>{if(e.target.id==='viewer')$('#viewer').classList.add('hidden')};$('#downloadOriginal').onclick=()=>window.open(photoURL(photos[viewerIndex],true,true),'_blank');
-$('#downloadZip').onclick=async()=>{const ids=new Set([...document.querySelectorAll('.pick:checked')].map(x=>x.dataset.id)),selected=photos.filter(x=>ids.has(x.id));if(!selected.length)return notice('Chọn ít nhất một ảnh');if(!window.JSZip)return notice('Không tải được thư viện ZIP. Kiểm tra kết nối mạng.');if(selected.length>25)return notice('Để tránh quá tải, hãy tải tối đa 25 ảnh mỗi lần');const btn=$('#downloadZip');btn.disabled=true;try{const zip=new JSZip();let i=0;for(const p of selected){const r=await fetch(photoURL(p,true));if(!r.ok)throw Error('Không tải được '+p.filename);const b=await r.blob();zip.file(`${String(++i).padStart(3,'0')}-${p.filename}`,b);btn.textContent=`Đang chuẩn bị ${i}/${selected.length}`}const blob=await zip.generateAsync({type:'blob',compression:'STORE'});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=(active?.title||'album').replace(/[^\p{L}\p{N}_-]+/gu,'_')+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(u),30000)}catch(e){notice(e.message)}finally{btn.disabled=false;t()}};
-async function auth(){try{admin=(await req('/me')).admin;$('#loginBox').classList.toggle('hidden',admin);$('#adminTools').classList.toggle('hidden',!admin)}catch(e){notice(e.message)}}$('#adminBtn').onclick=()=>{$('#adminPanel').classList.toggle('hidden');auth()};$('#login').onclick=async()=>{try{await req('/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:$('#password').value})});$('#password').value='';await auth();notice('Đăng nhập thành công')}catch(e){notice(e.message)}};$('#logout').onclick=async()=>{await req('/logout',{method:'POST'});admin=false;auth()};
-$('#createAlbum').onclick=async()=>{const title=$('#newTitle').value.trim(),priv=$('#privateAlbum').checked,password=$('#albumPassword').value;if(!title)return notice('Nhập tên album');if(priv&&!password)return notice('Album riêng tư cần mật khẩu');try{await req('/albums',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({title,category:$('#newCategory').value,description:$('#newDesc').value,private:priv,password})});$('#newTitle').value='';$('#newDesc').value='';$('#albumPassword').value='';refresh();notice('Đã tạo album')}catch(e){notice(e.message)}};
-async function makePreview(file){return new Promise(resolve=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const scale=Math.min(1,1200/Math.max(img.width,img.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(b=>{URL.revokeObjectURL(url);resolve(b)},'image/webp',.78)};img.onerror=()=>{URL.revokeObjectURL(url);resolve(null)};img.src=url})}
-$('#upload').onclick=async()=>{const files=[...$('#files').files],albumId=$('#uploadAlbum').value;if(!files.length)return notice('Chọn ảnh trước');const btn=$('#upload');btn.disabled=true;let ok=0;for(const [i,f] of files.entries()){try{if(f.size>15*1024*1024)throw Error('Ảnh vượt 15 MB');const fd=new FormData();fd.append('albumId',albumId);fd.append('file',f);const preview=await makePreview(f);if(preview)fd.append('preview',preview,'preview.webp');await req('/upload',{method:'POST',body:fd});ok++}catch(e){notice(f.name+': '+e.message)}$('#uploadStatus').textContent=`Đã upload ${ok}/${files.length} (đã xử lý ${i+1}/${files.length})`}btn.disabled=false;$('#files').value='';refresh()};
-t();refresh();auth();
+
+const $ = s => document.querySelector(s);
+const api = '/api';
+
+let albums = [];
+let photos = [];
+let active = null;
+let admin = false;
+let viewerIndex = 0;
+
+const translations = {
+  vi: [
+    'Thư viện hình ảnh',
+    'Khám phá không gian nghỉ dưỡng, hội nghị và thể thao',
+    'Không gian & dịch vụ',
+    'Album sự kiện',
+    'Quản trị',
+    'Trở về',
+    'Chọn tất cả',
+    'Tải ảnh đã chọn (ZIP)'
+  ],
+  en: [
+    'Photo Gallery',
+    'Discover our resort, event venues and sports facilities',
+    'Spaces & Services',
+    'Event Albums',
+    'Admin',
+    'Back',
+    'Select all',
+    'Download selected (ZIP)'
+  ],
+  zh: [
+    '图片画廊',
+    '探索度假村、会议场地与运动设施',
+    '场地与服务',
+    '活动相册',
+    '管理',
+    '返回',
+    '全选',
+    '下载所选照片 (ZIP)'
+  ],
+  ko: [
+    '사진 갤러리',
+    '리조트, 행사장 및 스포츠 시설을 만나보세요',
+    '공간 및 서비스',
+    '이벤트 앨범',
+    '관리자',
+    '뒤로',
+    '모두 선택',
+    '선택한 사진 ZIP 다운로드'
+  ]
+};
+
+function t() {
+  const v = translations[$('#lang').value] || translations.vi;
+  [
+    '#heroTitle',
+    '#heroDesc',
+    '#serviceTitle',
+    '#eventTitle',
+    '#adminBtn',
+    '#back',
+    '#selectAll',
+    '#downloadZip'
+  ].forEach((id, i) => {
+    const node = $(id);
+    if (node) node.textContent = v[i];
+  });
+}
+
+$('#lang').onchange = t;
+
+function notice(s) {
+  $('#notice').textContent = s;
+  setTimeout(() => {
+    if ($('#notice').textContent === s) {
+      $('#notice').textContent = '';
+    }
+  }, 7000);
+}
+
+async function req(path, opt) {
+  const r = await fetch(api + path, opt);
+  const j = await r.json();
+  if (!r.ok) throw Error(j.error || 'Lỗi kết nối');
+  return j;
+}
+
+function el(tag, cls, text) {
+  const x = document.createElement(tag);
+  if (cls) x.className = cls;
+  if (text !== undefined) x.textContent = text;
+  return x;
+}
+
+function photoURL(p, original = false, download = false) {
+  let s = `${api}/photo?id=${encodeURIComponent(p.id)}`;
+  if (original) s += '&original=1';
+  if (download) s += '&download=1';
+  return s;
+}
+
+async function refresh() {
+  try {
+    albums = (await req('/albums')).albums;
+
+    const g = $('#serviceGrid');
+    const e = $('#eventGrid');
+    const rg = $('#roomTypesGrid');
+
+    g.replaceChildren();
+    e.replaceChildren();
+    rg.replaceChildren();
+    $('#uploadAlbum').replaceChildren();
+
+    const icons = {
+      center1: '01',
+      center2: '02',
+      rooms: '⌂',
+      pickleball: '◉',
+      tennis: '◉',
+      'vip-dining': '✧',
+      gym: '◆',
+      pool: '≈',
+      poolside: '♨'
+    };
+
+    for (const a of albums) {
+      const card = el('div', 'tile');
+      const cover = el(
+        'div',
+        'cover',
+        a.category === 'events'
+          ? '✦'
+          : (icons[a.id] || '✦')
+      );
+
+      const body = el('div', 'body');
+      const h = el('h3', '', a.title);
+      const small = el(
+        'div',
+        'muted',
+        (a.category === 'room-types' && a.description
+          ? a.description + ' · '
+          : '') + a.count + ' ảnh'
+      );
+
+      card.append(cover, body);
+      body.append(h, small);
+
+      card.onclick = () =>
+        a.id === 'rooms' ? openRoomTypes() : openAlbum(a);
+
+      (a.category === 'events'
+        ? e
+        : a.category === 'room-types'
+          ? rg
+          : g).append(card);
+
+      const o = document.createElement('option');
+      o.value = a.id;
+      o.textContent = a.title;
+      $('#uploadAlbum').append(o);
+    }
+  } catch (e) {
+    notice(e.message);
+  }
+}
+
+async function openAlbum(a, pw = '') {
+  active = a;
+
+  try {
+    if (pw) {
+      await req('/album-access', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          id: a.id,
+          password: pw
+        })
+      });
+    }
+
+    const d = await req(
+      '/album?id=' + encodeURIComponent(a.id)
+    );
+
+    photos = d.photos;
+
+    $('#home').classList.add('hidden');
+    $('#roomTypesView').classList.add('hidden');
+    $('#albumView').classList.remove('hidden');
+
+    $('#albumTitle').textContent = a.title;
+    $('#albumDesc').textContent =
+      d.album.description || '';
+
+    const grid = $('#photoGrid');
+    grid.replaceChildren();
+
+    for (const [i, p] of photos.entries()) {
+      const tile = el('div', 'tile');
+      const img = document.createElement('img');
+
+      img.loading = 'lazy';
+      img.src = photoURL(p);
+      img.alt = p.filename;
+      img.onclick = () => view(i);
+
+      const body = el('div', 'body');
+      const name = el('div', 'muted', p.filename);
+      const actions = el('div', 'photo-actions');
+
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.className = 'pick';
+      check.dataset.id = p.id;
+      check.onchange = updateCount;
+
+      const btn = el('button', 'secondary', '↓');
+      btn.onclick = () =>
+        window.open(photoURL(p, true, true), '_blank');
+
+      actions.append(check, btn);
+
+      if (admin) {
+        const del = el('button', 'secondary', 'X');
+
+        del.onclick = async () => {
+          if (!confirm('Xóa ảnh này?')) return;
+
+          try {
+            await req(
+              '/photo?id=' + encodeURIComponent(p.id),
+              { method: 'DELETE' }
+            );
+            await openAlbum(a);
+          } catch (e) {
+            notice(e.message);
+          }
+        };
+
+        actions.append(del);
+      }
+
+      body.append(name, actions);
+      tile.append(img, body);
+      grid.append(tile);
+    }
+
+    updateCount();
+  } catch (e) {
+    if (String(e.message).includes('mật khẩu')) {
+      const input = prompt('Nhập mật khẩu album');
+      if (input !== null) return openAlbum(a, input);
+    }
+    notice(e.message);
+  }
+}
+
+function openRoomTypes() {
+  $('#home').classList.add('hidden');
+  $('#albumView').classList.add('hidden');
+  $('#roomTypesView').classList.remove('hidden');
+
+  if (!albums.some(a => a.category === 'room-types')) {
+    $('#roomTypesGrid').textContent =
+      'Chưa có hạng phòng. Quản trị viên có thể tạo từng hạng phòng trong mục Quản trị.';
+  }
+}
+
+$('#roomBack').onclick = () => {
+  $('#roomTypesView').classList.add('hidden');
+  $('#home').classList.remove('hidden');
+};
+
+function updateCount() {
+  $('#selectedCount').textContent =
+    document.querySelectorAll('.pick:checked').length +
+    ' / ' + photos.length;
+}
+
+$('#back').onclick = () => {
+  $('#albumView').classList.add('hidden');
+  $('#home').classList.remove('hidden');
+  active = null;
+  refresh();
+};
+
+$('#selectAll').onclick = () => {
+  const cs = [...document.querySelectorAll('.pick')];
+  const all = cs.every(x => x.checked);
+  cs.forEach(x => x.checked = !all);
+  updateCount();
+};
+
+function view(i) {
+  viewerIndex = i;
+  $('#bigImage').src = photoURL(photos[i], true);
+  $('#viewer').classList.remove('hidden');
+}
+
+function move(n) {
+  if (!photos.length) return;
+  viewerIndex =
+    (viewerIndex + n + photos.length) % photos.length;
+  view(viewerIndex);
+}
+
+$('.close').onclick = () =>
+  $('#viewer').classList.add('hidden');
+
+$('.prev').onclick = () => move(-1);
+$('.next').onclick = () => move(1);
+
+$('#viewer').onclick = e => {
+  if (e.target.id === 'viewer') {
+    $('#viewer').classList.add('hidden');
+  }
+};
+
+$('#downloadOriginal').onclick = () => {
+  if (!photos.length) return;
+  window.open(
+    photoURL(photos[viewerIndex], true, true),
+    '_blank'
+  );
+};
+
+$('#downloadZip').onclick = async () => {
+  const ids = new Set(
+    [...document.querySelectorAll('.pick:checked')]
+      .map(x => x.dataset.id)
+  );
+
+  const selected = photos.filter(x => ids.has(x.id));
+
+  if (!selected.length)
+    return notice('Chọn ít nhất một ảnh');
+
+  if (!window.JSZip)
+    return notice('Không tải được thư viện ZIP.');
+
+  if (selected.length > 25)
+    return notice('Hãy tải tối đa 25 ảnh mỗi lần');
+
+  const btn = $('#downloadZip');
+  btn.disabled = true;
+
+  try {
+    const zip = new JSZip();
+    let i = 0;
+
+    for (const p of selected) {
+      const r = await fetch(photoURL(p, true));
+
+      if (!r.ok)
+        throw Error('Không tải được ' + p.filename);
+
+      const b = await r.blob();
+
+      zip.file(
+        `${String(++i).padStart(3, '0')}-${p.filename}`,
+        b
+      );
+
+      btn.textContent =
+        `Đang chuẩn bị ${i}/${selected.length}`;
+    }
+
+    const blob = await zip.generateAsync({
+      type: 'blob',
+      compression: 'STORE'
+    });
+
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    a.href = u;
+    a.download =
+      (active?.title || 'album')
+        .replace(/[^\p{L}\p{N}_-]+/gu, '_') +
+      '.zip';
+
+    a.click();
+
+    setTimeout(() => URL.revokeObjectURL(u), 30000);
+  } catch (e) {
+    notice(e.message);
+  } finally {
+    btn.disabled = false;
+    t();
+  }
+};
+
+// KIỂM TRA PHIÊN QUẢN TRỊ
+async function auth() {
+  try {
+    const data = await req('/me');
+    admin = Boolean(data.admin);
+
+    $('#loginBox').classList.toggle('hidden', admin);
+    $('#adminTools').classList.toggle('hidden', !admin);
+  } catch (e) {
+    admin = false;
+    $('#loginBox').classList.remove('hidden');
+    $('#adminTools').classList.add('hidden');
+    notice(e.message);
+  }
+}
+
+// ĐÃ SỬA: NÚT QUẢN TRỊ
+$('#adminBtn').onclick = async () => {
+  const panel = $('#adminPanel');
+
+  // Luôn mở bảng quản trị
+  panel.classList.remove('hidden');
+
+  // Tự cuộn tới khu vực quản trị
+  panel.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+
+  // Kiểm tra đăng nhập
+  await auth();
+
+  // Tự động chọn ô mật khẩu
+  if (!admin) {
+    setTimeout(() => {
+      $('#password').focus({
+        preventScroll: true
+      });
+    }, 400);
+  }
+};
+
+// ĐĂNG NHẬP
+$('#login').onclick = async () => {
+  try {
+    await req('/login', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        password: $('#password').value
+      })
+    });
+
+    $('#password').value = '';
+
+    await auth();
+
+    if (admin) {
+      notice('Đăng nhập thành công');
+      $('#adminTools').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    } else {
+      notice('Chưa xác nhận được phiên quản trị');
+    }
+  } catch (e) {
+    notice(e.message);
+  }
+};
+
+// ĐĂNG XUẤT
+$('#logout').onclick = async () => {
+  try {
+    await req('/logout', {
+      method: 'POST'
+    });
+
+    admin = false;
+    await auth();
+    notice('Đã đăng xuất');
+  } catch (e) {
+    notice(e.message);
+  }
+};
+
+// TẠO ALBUM
+$('#createAlbum').onclick = async () => {
+  const title = $('#newTitle').value.trim();
+  const priv = $('#privateAlbum').checked;
+  const password = $('#albumPassword').value;
+
+  if (!title)
+    return notice('Nhập tên album');
+
+  if (priv && !password)
+    return notice('Album riêng tư cần mật khẩu');
+
+  try {
+    await req('/albums', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        title,
+        category: $('#newCategory').value,
+        description: $('#newDesc').value,
+        private: priv,
+        password
+      })
+    });
+
+    $('#newTitle').value = '';
+    $('#newDesc').value = '';
+    $('#albumPassword').value = '';
+
+    await refresh();
+    notice('Đã tạo album');
+  } catch (e) {
+    notice(e.message);
+  }
+};
+
+// TẠO ẢNH XEM TRƯỚC
+async function makePreview(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      const scale = Math.min(
+        1,
+        1200 / Math.max(img.width, img.height)
+      );
+
+      const canvas = document.createElement('canvas');
+
+      canvas.width = Math.max(
+        1,
+        Math.round(img.width * scale)
+      );
+
+      canvas.height = Math.max(
+        1,
+        Math.round(img.height * scale)
+      );
+
+      canvas.getContext('2d').drawImage(
+        img,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      canvas.toBlob(b => {
+        URL.revokeObjectURL(url);
+        resolve(b);
+      }, 'image/webp', 0.78);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+
+    img.src = url;
+  });
+}
+
+// UPLOAD ẢNH - KHÔNG GIỚI HẠN SỐ ẢNH CHỌN
+$('#upload').onclick = async () => {
+  const files = [...$('#files').files];
+  const albumId = $('#uploadAlbum').value;
+
+  if (!files.length)
+    return notice('Chọn ảnh trước');
+
+  if (!albumId)
+    return notice('Chọn album trước');
+
+  const btn = $('#upload');
+  btn.disabled = true;
+
+  let ok = 0;
+  let failed = 0;
+
+  try {
+    for (const [i, f] of files.entries()) {
+      try {
+        if (f.size > 15 * 1024 * 1024) {
+          throw Error('Ảnh vượt 15 MB');
+        }
+
+        const fd = new FormData();
+
+        fd.append('albumId', albumId);
+        fd.append('file', f);
+
+        const preview = await makePreview(f);
+
+        if (preview) {
+          fd.append(
+            'preview',
+            preview,
+            'preview.webp'
+          );
+        }
+
+        await req('/upload', {
+          method: 'POST',
+          body: fd
+        });
+
+        ok++;
+      } catch (e) {
+        failed++;
+        notice(f.name + ': ' + e.message);
+      }
+
+      $('#uploadStatus').textContent =
+        `Thành công ${ok}, lỗi ${failed} ` +
+        `- đã xử lý ${i + 1}/${files.length} ảnh`;
+    }
+  } finally {
+    btn.disabled = false;
+    $('#files').value = '';
+    await refresh();
+  }
+};
+
+// KHỞI TẠO
+t();
+refresh();
+auth();
