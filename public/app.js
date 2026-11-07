@@ -100,6 +100,7 @@ function photoURL(p, original = false, download = false) {
   return s;
 }
 
+
 async function refresh() {
   try {
     albums = (await req('/albums')).albums;
@@ -107,11 +108,12 @@ async function refresh() {
     const g = $('#serviceGrid');
     const e = $('#eventGrid');
     const rg = $('#roomTypesGrid');
+    const uploadSelect = $('#uploadAlbum');
 
     g.replaceChildren();
     e.replaceChildren();
     rg.replaceChildren();
-    $('#uploadAlbum').replaceChildren();
+    uploadSelect.replaceChildren();
 
     const icons = {
       center1: '01',
@@ -127,6 +129,7 @@ async function refresh() {
 
     for (const a of albums) {
       const card = el('div', 'tile');
+
       const cover = el(
         'div',
         'cover',
@@ -136,8 +139,9 @@ async function refresh() {
       );
 
       const body = el('div', 'body');
-      const h = el('h3', '', a.title);
-      const small = el(
+      const title = el('h3', '', a.title);
+
+      const description = el(
         'div',
         'muted',
         (a.category === 'room-types' && a.description
@@ -145,25 +149,101 @@ async function refresh() {
           : '') + a.count + ' ảnh'
       );
 
+      body.append(title, description);
       card.append(cover, body);
-      body.append(h, small);
 
-      card.onclick = () =>
-        a.id === 'rooms' ? openRoomTypes() : openAlbum(a);
+      card.onclick = () => {
+        if (a.id === 'rooms') {
+          openRoomTypes();
+        } else {
+          openAlbum(a);
+        }
+      };
 
-      (a.category === 'events'
-        ? e
-        : a.category === 'room-types'
-          ? rg
-          : g).append(card);
+      const target =
+        a.category === 'events' ? e :
+        a.category === 'room-types' ? rg : g;
 
-      const o = document.createElement('option');
-      o.value = a.id;
-      o.textContent = a.title;
-      $('#uploadAlbum').append(o);
+      target.append(card);
+
+      const option = document.createElement('option');
+      option.value = a.id;
+      option.textContent = a.title;
+      uploadSelect.append(option);
+
+      // Tự động lấy ảnh đã upload làm ảnh đại diện
+      if (Number(a.count) > 0 && a.id !== 'rooms') {
+        (async () => {
+          try {
+            const data = await req(
+              '/album?id=' + encodeURIComponent(a.id)
+            );
+
+            const firstPhoto = data.photos?.[0];
+            if (!firstPhoto) return;
+
+            const img = document.createElement('img');
+            img.src = photoURL(firstPhoto);
+            img.alt = 'Ảnh đại diện ' + a.title;
+            img.loading = 'lazy';
+
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+
+            img.onerror = () => {
+              img.remove();
+              cover.style.display = '';
+            };
+
+            cover.textContent = '';
+            cover.append(img);
+          } catch (error) {
+            // Giữ ảnh nền mặc định nếu album chưa truy cập được
+          }
+        })();
+      }
     }
-  } catch (e) {
-    notice(e.message);
+
+    // Ảnh đại diện cho Hệ thống phòng nghỉ:
+    // lấy ảnh từ một hạng phòng đã có ảnh.
+    const rooms = albums.find(a => a.id === 'rooms');
+    const roomCover = [...g.querySelectorAll('.tile')]
+      .find(card => card.querySelector('h3')?.textContent === rooms?.title)
+      ?.querySelector('.cover');
+
+    const roomAlbum = albums.find(
+      a => a.category === 'room-types' && Number(a.count) > 0
+    );
+
+    if (roomCover && roomAlbum) {
+      try {
+        const data = await req(
+          '/album?id=' + encodeURIComponent(roomAlbum.id)
+        );
+
+        const firstPhoto = data.photos?.[0];
+
+        if (firstPhoto) {
+          const img = document.createElement('img');
+          img.src = photoURL(firstPhoto);
+          img.alt = 'Hệ thống phòng nghỉ';
+          img.loading = 'lazy';
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+
+          img.onerror = () => img.remove();
+
+          roomCover.replaceChildren(img);
+        }
+      } catch (error) {
+        // Giữ ảnh nền mặc định
+      }
+    }
+
+  } catch (error) {
+    notice(error.message);
   }
 }
 
