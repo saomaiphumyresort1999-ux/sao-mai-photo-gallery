@@ -101,148 +101,123 @@ function photoURL(p, original = false, download = false) {
 }
 
 
+
 async function refresh() {
   try {
-    albums = (await req('/albums')).albums;
+    const data = await req('/albums');
+    albums = data.albums || [];
 
-    const g = $('#serviceGrid');
-    const e = $('#eventGrid');
-    const rg = $('#roomTypesGrid');
+    const serviceGrid = $('#serviceGrid');
+    const eventGrid = $('#eventGrid');
+    const roomGrid = $('#roomTypesGrid');
     const uploadSelect = $('#uploadAlbum');
 
-    g.replaceChildren();
-    e.replaceChildren();
-    rg.replaceChildren();
+    serviceGrid.replaceChildren();
+    eventGrid.replaceChildren();
+    roomGrid.replaceChildren();
     uploadSelect.replaceChildren();
 
-    const icons = {
-      center1: '01',
-      center2: '02',
-      rooms: '⌂',
-      pickleball: '◉',
-      tennis: '◉',
-      'vip-dining': '✧',
-      gym: '◆',
-      pool: '≈',
-      poolside: '♨'
-    };
+    const coverMap = new Map();
 
-    for (const a of albums) {
+    for (const album of albums) {
       const card = el('div', 'tile');
+      const cover = el('div', 'cover');
 
-      const cover = el(
-        'div',
-        'cover',
-        a.category === 'events'
-          ? '✦'
-          : (icons[a.id] || '✦')
-      );
+      cover.textContent = album.category === 'events'
+        ? '✦'
+        : (icons[album.id] || '✦');
 
       const body = el('div', 'body');
-      const title = el('h3', '', a.title);
-
-      const description = el(
+      const title = el('h3', '', album.title);
+      const count = el(
         'div',
         'muted',
-        (a.category === 'room-types' && a.description
-          ? a.description + ' · '
-          : '') + a.count + ' ảnh'
+        `${album.count} ảnh`
       );
 
-      body.append(title, description);
+      body.append(title, count);
       card.append(cover, body);
 
       card.onclick = () => {
-        if (a.id === 'rooms') {
+        if (album.id === 'rooms') {
           openRoomTypes();
         } else {
-          openAlbum(a);
+          openAlbum(album);
         }
       };
 
-      const target =
-        a.category === 'events' ? e :
-        a.category === 'room-types' ? rg : g;
+      const target = album.category === 'events'
+        ? eventGrid
+        : album.category === 'room-types'
+          ? roomGrid
+          : serviceGrid;
 
       target.append(card);
+      coverMap.set(album.id, cover);
 
       const option = document.createElement('option');
-      option.value = a.id;
-      option.textContent = a.title;
+      option.value = album.id;
+      option.textContent = album.title;
       uploadSelect.append(option);
+    }
 
-      // Tự động lấy ảnh đã upload làm ảnh đại diện
-      if (Number(a.count) > 0 && a.id !== 'rooms') {
-        (async () => {
-          try {
-            const data = await req(
-              '/album?id=' + encodeURIComponent(a.id)
-            );
+    async function loadCover(album, cover) {
+      try {
+        const result = await req(
+          '/album?id=' + encodeURIComponent(album.id)
+        );
 
-            const firstPhoto = data.photos?.[0];
-            if (!firstPhoto) return;
+        const photo = result.photos?.[0];
+        if (!photo) return false;
 
-            const img = document.createElement('img');
-            img.src = photoURL(firstPhoto);
-            img.alt = 'Ảnh đại diện ' + a.title;
-            img.loading = 'lazy';
+        const image = new Image();
+        image.alt = 'Ảnh đại diện ' + album.title;
+        image.decoding = 'async';
+        image.style.cssText =
+          'width:100%;height:100%;object-fit:cover;display:block';
 
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(
+            new Error('Không tải được ảnh từ R2')
+          );
+          image.src = photoURL(photo);
+        });
 
-            img.onerror = () => {
-              img.remove();
-              cover.style.display = '';
-            };
-
-            cover.textContent = '';
-            cover.append(img);
-          } catch (error) {
-            // Giữ ảnh nền mặc định nếu album chưa truy cập được
-          }
-        })();
+        cover.replaceChildren(image);
+        return true;
+      } catch (error) {
+        console.warn(
+          'Lỗi ảnh đại diện:',
+          album.title,
+          error.message
+        );
+        return false;
       }
     }
 
-    // Ảnh đại diện cho Hệ thống phòng nghỉ:
-    // lấy ảnh từ một hạng phòng đã có ảnh.
-    const rooms = albums.find(a => a.id === 'rooms');
-    const roomCover = [...g.querySelectorAll('.tile')]
-      .find(card => card.querySelector('h3')?.textContent === rooms?.title)
-      ?.querySelector('.cover');
-
-    const roomAlbum = albums.find(
-      a => a.category === 'room-types' && Number(a.count) > 0
+    // Ảnh đại diện cho các danh mục và album sự kiện
+    await Promise.all(
+      albums
+        .filter(a => a.id !== 'rooms' && Number(a.count) > 0)
+        .map(a => loadCover(a, coverMap.get(a.id)))
     );
 
-    if (roomCover && roomAlbum) {
-      try {
-        const data = await req(
-          '/album?id=' + encodeURIComponent(roomAlbum.id)
-        );
+    // Hệ thống phòng nghỉ lấy ảnh từ hạng phòng
+    const roomsCover = coverMap.get('rooms');
 
-        const firstPhoto = data.photos?.[0];
+    if (roomsCover) {
+      const roomAlbums = albums.filter(
+        a => a.category === 'room-types' && Number(a.count) > 0
+      );
 
-        if (firstPhoto) {
-          const img = document.createElement('img');
-          img.src = photoURL(firstPhoto);
-          img.alt = 'Hệ thống phòng nghỉ';
-          img.loading = 'lazy';
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
-
-          img.onerror = () => img.remove();
-
-          roomCover.replaceChildren(img);
-        }
-      } catch (error) {
-        // Giữ ảnh nền mặc định
+      for (const roomAlbum of roomAlbums) {
+        if (await loadCover(roomAlbum, roomsCover)) break;
       }
     }
 
   } catch (error) {
+    console.error('Lỗi tải danh mục:', error);
     notice(error.message);
   }
 }
