@@ -5,8 +5,23 @@ async function digest(s){return Array.from(new Uint8Array(await crypto.subtle.di
 async function hmac(s,key){const k=await crypto.subtle.importKey('raw',enc.encode(key),{name:'HMAC',hash:'SHA-256'},false,['sign']);return Array.from(new Uint8Array(await crypto.subtle.sign('HMAC',k,enc.encode(s)))).map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function isAdmin(req,env){const raw=(req.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('sm_session='))?.slice(11);if(!raw||!env.SESSION_SECRET)return false;const [exp,sig]=raw.split('.');if(!exp||!sig||Number(exp)<Date.now())return false;return (await hmac(exp,env.SESSION_SECRET))===sig}
 const MAX_TOTAL=8*1000*1000*1000, MAX_FILE=15*1024*1024, MAX_PREVIEW=2*1024*1024;
-const allowedTypes=new Map([['image/jpeg',[0xff,0xd8,0xff]],['image/png',[0x89,0x50,0x4e,0x47]],['image/webp',[0x52,0x49,0x46,0x46]],['image/gif',[0x47,0x49,0x46,0x38]]]);
-async function validImage(file){const magic=allowedTypes.get(file.type);if(!magic)return false;const b=new Uint8Array(await file.slice(0,16).arrayBuffer());if(!magic.every((v,i)=>b[i]===v))return false;if(file.type==='image/webp'&&String.fromCharCode(...b.slice(8,12))!=='WEBP')return false;return true}
+const allowedTypes=new Map([
+ ['image/jpeg',[0xff,0xd8,0xff]],
+ ['image/png',[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]],
+ ['image/webp',[0x52,0x49,0x46,0x46]],
+ ['image/gif',[0x47,0x49,0x46,0x38]]
+]);
+async function detectedImageType(file){
+ const b=new Uint8Array(await file.slice(0,16).arrayBuffer());
+ for(const [mime,magic] of allowedTypes){
+  if(!magic.every((v,i)=>b[i]===v))continue;
+  if(mime==='image/webp'&&String.fromCharCode(...b.slice(8,12))!=='WEBP')continue;
+  if(mime==='image/gif'&&![0x37,0x39].includes(b[4]))continue;
+  return mime;
+ }
+ return null;
+}
+async function validImage(file){return Boolean(await detectedImageType(file))}
 const clean=(s)=>String(s||'').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,100);
 function sameOrigin(req){const origin=req.headers.get('Origin');if(!origin)return false;try{return new URL(origin).origin===new URL(req.url).origin}catch{return false}}
 function cookieValue(req,name){return (req.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='))?.slice(name.length+1)||''}
@@ -49,8 +64,8 @@ export async function onRequest({request,env,params}){
   if(path==='/upload'&&method==='POST'){
    if(!admin)return err(401,'Cần đăng nhập');if(!env.PHOTOS)return err(503,'R2 chưa kích hoạt');const len=Number(request.headers.get('content-length')||0);if(len>18*1024*1024)return err(413,'Yêu cầu quá lớn');const form=await request.formData();const file=form.get('file');const preview=form.get('preview');const albumId=String(form.get('albumId')||'');if(!file||typeof file==='string')return err(400,'Thiếu file');
    if(file.size<1||file.size>MAX_FILE)return err(413,'Ảnh phải từ 1 byte đến 15 MB');
-   if(!await validImage(file))return err(415,'Chỉ chấp nhận JPEG, PNG, WebP, GIF hợp lệ');
-   if(preview&&(typeof preview==='string'||preview.size>MAX_PREVIEW||preview.type!=='image/webp'||!await validImage(preview)))return err(415,'Preview WebP không hợp lệ hoặc vượt 2 MB');
+   const detectedMime=await detectedImageType(file);if(!detectedMime)return err(415,'File không phải ảnh JPEG, PNG, WebP hoặc GIF hợp lệ');
+   if(preview&&(typeof preview==='string'||preview.size>MAX_PREVIEW||(await detectedImageType(preview))!=='image/webp'))return err(415,'Preview WebP không hợp lệ hoặc vượt 2 MB');
    if(!await env.DB.prepare('SELECT id FROM albums WHERE id=?').bind(albumId).first())return err(404,'Không có album');
    // Atomic compare-and-reserve prevents simultaneous requests from exceeding the 8 GB application cap.
    // Fail closed if the migration has not been applied. Reservations are intentionally NOT auto-expired:
@@ -61,9 +76,9 @@ export async function onRequest({request,env,params}){
    const id=crypto.randomUUID(),key=`original/${albumId}/${id}-${clean(file.name)}`,pk=preview?`preview/${albumId}/${id}.webp`:null;
    let originalWritten=false,previewWritten=false;
    try{
-    await env.PHOTOS.put(key,file.stream(),{httpMetadata:{contentType:file.type}});originalWritten=true;
+    await env.PHOTOS.put(key,file.stream(),{httpMetadata:{contentType:detectedMime}});originalWritten=true;
     if(pk){await env.PHOTOS.put(pk,preview.stream(),{httpMetadata:{contentType:'image/webp'}});previewWritten=true}
-    await env.DB.prepare('INSERT INTO photos(id,album_id,filename,original_key,preview_key,mime,bytes) VALUES(?,?,?,?,?,?,?)').bind(id,albumId,file.name,key,pk,file.type,file.size).run();
+    await env.DB.prepare('INSERT INTO photos(id,album_id,filename,original_key,preview_key,mime,bytes) VALUES(?,?,?,?,?,?,?)').bind(id,albumId,file.name,key,pk,detectedMime,file.size).run();
     // If this DB update fails, reservation remains held (fail closed), preventing over-cap uploads.
     await env.DB.prepare('UPDATE storage_quota SET used_bytes=used_bytes+?,reserved_bytes=reserved_bytes-? WHERE id=1').bind(reserve,reserve).run();
     return json({id});
