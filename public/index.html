@@ -1,134 +1,862 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b2236"><title>Sao Mai Phu My Resort | Photo Gallery</title><style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#142b3d;background:#f6f8fa}*{box-sizing:border-box}body{margin:0}header{background:#0b2236;color:#fff;padding:22px max(18px,calc((100vw - 1200px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.brand{font-family:Georgia,serif;letter-spacing:2px;font-size:23px}.sub{font-size:11px;letter-spacing:3px;color:#d8b978;margin-top:6px}button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:7px;padding:11px 16px;background:#123e5c;color:white}button.secondary{background:white;color:#123e5c;border:1px solid #cbd5dd}button.gold{background:#c9a761;color:#172b3b}button:disabled{opacity:.45;cursor:default}main{max-width:1200px;margin:auto;padding:28px 18px 70px}.hero{padding:45px 24px;text-align:center;background:linear-gradient(125deg,#0d2a40,#225473);color:white;border-radius:15px;margin-bottom:28px}.hero h1{font-family:Georgia,serif;font-size:clamp(29px,5vw,48px);font-weight:normal;margin:10px}.hero p{color:#d7e3ea}.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:18px 0}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.tile{background:#fff;border:1px solid #e4e9ed;border-radius:12px;overflow:hidden;box-shadow:0 5px 22px #12293c0c}.cover{height:170px;background:linear-gradient(130deg,#1b4560,#b7a071);display:grid;place-items:center;color:#fff;font-size:40px}.tile img{width:100%;height:180px;object-fit:cover;display:block}.tile .body{padding:16px}.tile h3{margin:0 0 7px;font-family:Georgia,serif;font-size:20px}.muted{color:#667b89;font-size:13px}.hidden{display:none!important}.modal{position:fixed;inset:0;background:#07131bea;z-index:10;display:flex;align-items:center;justify-content:center;padding:15px}.modal img{max-width:94vw;max-height:80vh;object-fit:contain}.modal .close{position:absolute;top:18px;right:20px}.modal .prev{position:absolute;left:10px;top:50%}.modal .next{position:absolute;right:10px;top:50%}.modal .download{position:absolute;bottom:20px;left:50%;transform:translateX(-50%)}.panel{background:#fff;padding:20px;border:1px solid #e4e9ed;border-radius:12px;margin:18px 0}.panel input,.panel select{padding:10px;border:1px solid #cbd5dd;border-radius:6px;max-width:100%}.panel label{display:block;margin:10px 0}.photo-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}.photo-actions button{padding:7px 9px}.progress{padding:12px;color:#285571}.footer{text-align:center;padding:22px;color:#81919a}.pill{display:inline-block;border:1px solid #c9a761;border-radius:30px;padding:6px 13px;color:#d8b978;font-size:12px}#notice{min-height:25px;color:#b44b3b} @media(max-width:550px){header{padding:17px}.brand{font-size:18px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.cover,.tile img{height:125px}.tile .body{padding:10px}.tile h3{font-size:16px}.hero{padding:30px 15px}}
-</style>
-/* SAO MAI PHOTO GALLERY - LUXURY UI FIX */
 
-:root {
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #142b3d;
-  background: #f5f7f9;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2236">
 
-body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  line-height: 1.55;
-}
+  <title>Sao Mai Phu My Resort | Photo Gallery</title>
 
-header {
-  background: #0b2236;
-  padding-top: 20px;
-  padding-bottom: 20px;
-  box-shadow: 0 3px 15px rgba(0,0,0,.08);
-}
+  <meta name="description"
+    content="Thư viện hình ảnh Sao Mai Phu My Resort - Khám phá phòng nghỉ, trung tâm hội nghị, nhà hàng, hồ bơi và tiện ích nghỉ dưỡng.">
 
-.brand {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 600;
-  letter-spacing: 1.3px;
-  line-height: 1.3;
-}
+  <style>
+    /* =====================================
+       SAO MAI PHOTO GALLERY v1.5
+       LUXURY NAVY & GOLD
+       ===================================== */
 
-.hero {
-  padding: 62px 28px;
-  background: linear-gradient(125deg,#0b2236,#214f6b);
-  border-radius: 18px;
-}
+    :root {
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #142b3d;
+      background: #f5f7f9;
 
-.hero h1 {
-  font-family: "Segoe UI", Arial, sans-serif;
-  font-size: clamp(30px,4vw,46px);
-  font-weight: 700;
-  letter-spacing: -.5px;
-  line-height: 1.3;
-}
+      --navy: #0b2236;
+      --navy-light: #1c4762;
+      --gold: #c9a761;
+      --gold-light: #e2c98d;
+      --white: #ffffff;
+      --muted: #667b89;
+      --border: #e3e9ed;
 
-.hero p {
-  font-size: 16px;
-  line-height: 1.7;
-}
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
 
-h2 {
-  font-family: "Segoe UI", Arial, sans-serif;
-  font-size: 25px;
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: -.3px;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-.grid {
-  grid-template-columns: repeat(auto-fill,minmax(240px,1fr));
-  gap: 20px;
-}
+    html {
+      scroll-behavior: smooth;
+    }
 
-.tile {
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid #e5e9ed;
-  box-shadow: 0 6px 24px rgba(12,36,55,.06);
-  transition: transform .25s ease,box-shadow .25s ease;
-}
+    body {
+      margin: 0;
+      min-width: 320px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.55;
+    }
 
-.tile:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 32px rgba(12,36,55,.13);
-}
+    button,
+    input,
+    select {
+      font: inherit;
+    }
 
-.cover {
-  height: 185px;
-  background: linear-gradient(135deg,#183c54,#b7a071);
-}
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 17px;
+      background: var(--navy-light);
+      color: white;
+      font-weight: 600;
+      transition: background .2s, transform .2s;
+    }
 
-.tile .body {
-  padding: 17px;
-}
+    button:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
 
-.tile h3 {
-  font-family: "Segoe UI", Arial, sans-serif;
-  font-size: 17px;
-  font-weight: 650;
-  line-height: 1.45;
-  letter-spacing: 0;
-  overflow-wrap: break-word;
-  margin: 0 0 8px;
-}
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
 
-.muted {
-  font-family: "Segoe UI", Arial, sans-serif;
-  font-size: 13px;
-  line-height: 1.5;
-}
+    button.secondary {
+      background: white;
+      color: var(--navy);
+      border: 1px solid #cbd5dd;
+    }
 
-button {
-  font-family: "Segoe UI", Arial, sans-serif;
-  font-weight: 600;
-  transition: filter .2s ease;
-}
+    button.gold {
+      background: var(--gold);
+      color: var(--navy);
+    }
 
-button:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 3px;
+    }
 
-.panel {
-  border-radius: 16px;
-  padding: 26px;
-  box-shadow: 0 8px 30px rgba(12,36,55,.06);
-}
+    /* HEADER */
 
-#adminPanel {
-  scroll-margin-top: 20px;
-}
+    header {
+      background: var(--navy);
+      color: white;
+      padding: 19px max(18px, calc((100vw - 1200px) / 2));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      box-shadow: 0 3px 16px rgba(0,0,0,.08);
+    }
 
-@media(max-width:550px) {
-  .grid {
-    grid-template-columns: repeat(2,minmax(0,1fr));
-    gap: 11px;
-  }
-  .tile .body { padding: 12px; }
-  .tile h3 { font-size: 15px; }
-  .cover { height: 130px; }
-  .hero { padding: 38px 18px; }
-  h2 { font-size: 21px; }
-}
-</head><body><header><div><div class="brand">SAO MAI PHU MY RESORT</div><div class="sub">PHOTO GALLERY</div></div><div><select id="lang"><option value="vi">Tiếng Việt</option><option value="en">English</option><option value="zh">中文</option><option value="ko">한국어</option></select> <button id="adminBtn" class="gold">Quản trị</button></div></header><main><section class="hero"><span class="pill">SAO MAI PHU MY RESORT</span><h1 id="heroTitle">Thư viện hình ảnh</h1><p id="heroDesc">Khám phá không gian nghỉ dưỡng, hội nghị và thể thao</p></section><div id="notice"></div><section id="home"><h2 id="serviceTitle">Không gian & dịch vụ</h2><div id="serviceGrid" class="grid"></div><h2 id="eventTitle">Album sự kiện</h2><div id="eventGrid" class="grid"></div></section><section id="roomTypesView" class="hidden"><div class="toolbar"><button id="roomBack" class="secondary">← Trở về</button><h2 id="roomHeading">Các hạng phòng</h2></div><p class="muted">Chọn hạng phòng để xem hình ảnh chi tiết.</p><div id="roomTypesGrid" class="grid"></div></section><section id="albumView" class="hidden"><div class="toolbar"><button id="back" class="secondary">← Trở về</button><h2 id="albumTitle" style="margin:0"></h2></div><p id="albumDesc" class="muted"></p><div class="toolbar"><button id="selectAll" class="secondary">Chọn tất cả</button><button id="downloadZip">Tải ảnh đã chọn (ZIP)</button><span id="selectedCount" class="muted"></span></div><div id="photoGrid" class="grid"></div></section><section id="adminPanel" class="panel hidden"><h2>Quản trị thư viện</h2><div id="loginBox"><input id="password" type="password" placeholder="Mật khẩu quản trị"><button id="login">Đăng nhập</button></div><div id="adminTools" class="hidden"><button id="logout" class="secondary">Đăng xuất</button><h3>Tạo album sự kiện hoặc hạng phòng</h3><label>Loại album <select id="newCategory"><option value="events">Sự kiện</option><option value="room-types">Hạng phòng nghỉ</option></select></label><label>Tên album <input id="newTitle" placeholder="Ví dụ: Hội nghị tháng 11"></label><label>Mô tả <input id="newDesc" placeholder="Mô tả ngắn"></label><label><input type="checkbox" id="privateAlbum"> Album có mật khẩu</label><label>Mật khẩu album <input id="albumPassword" type="password" placeholder="Chỉ dùng khi bật riêng tư"></label><button id="createAlbum">Tạo album</button><h3>Upload ảnh</h3><label>Album <select id="uploadAlbum"></select></label><label>Chọn nhiều ảnh <input id="files" type="file" accept="image/*" multiple></label><button id="upload">Upload ảnh</button><div id="uploadStatus" class="progress"></div><p class="muted">Tối đa 15 MB mỗi ảnh. Ảnh gốc được giữ nguyên; ảnh xem trước tạo trên thiết bị trước khi upload.</p></div></section></main><div id="viewer" class="modal hidden"><button class="close">✕</button><button class="prev">‹</button><img id="bigImage" alt="Ảnh resort"><button class="next">›</button><button class="download" id="downloadOriginal">Tải ảnh gốc</button></div><footer class="footer">© Sao Mai Phu My Resort · Photo Gallery</footer><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="/app.js"></script></body></html>
+    .brand {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 23px;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: 1.5px;
+    }
+
+    .sub {
+      margin-top: 5px;
+      color: var(--gold-light);
+      font-size: 10px;
+      letter-spacing: 3px;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #lang {
+      padding: 10px;
+      border-radius: 7px;
+      border: 1px solid #d7dee4;
+      background: white;
+      color: var(--navy);
+      max-width: 130px;
+    }
+
+    /* MAIN */
+
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 30px 18px 75px;
+    }
+
+    /* HERO */
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 65px 25px;
+      text-align: center;
+      color: white;
+      background: linear-gradient(
+        125deg,
+        #0b2236 0%,
+        #173b55 55%,
+        #245976 100%
+      );
+      border-radius: 18px;
+      margin-bottom: 55px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border: 1px solid rgba(226,201,141,.12);
+      border-radius: 50%;
+      top: -180px;
+      right: -100px;
+      pointer-events: none;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 15px;
+      border: 1px solid var(--gold);
+      border-radius: 30px;
+      color: var(--gold-light);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+
+    .hero h1 {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: clamp(30px, 4.5vw, 48px);
+      font-weight: 700;
+      letter-spacing: -.5px;
+      line-height: 1.3;
+      margin: 16px 0 12px;
+    }
+
+    .hero p {
+      color: #d9e5ed;
+      font-size: 16px;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    /* HEADINGS */
+
+    h2 {
+      color: var(--navy);
+      font-size: 24px;
+      line-height: 1.35;
+      font-weight: 700;
+      margin: 28px 0 20px;
+    }
+
+    h3 {
+      color: var(--navy);
+      line-height: 1.45;
+    }
+
+    /* GRID */
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fill,
+        minmax(240px, 1fr)
+      );
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+
+    .tile {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 6px 24px rgba(12,36,55,.06);
+      transition: transform .25s ease, box-shadow .25s ease;
+      min-width: 0;
+    }
+
+    .tile:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 14px 34px rgba(12,36,55,.14);
+    }
+
+    #serviceGrid .tile,
+    #eventGrid .tile,
+    #roomTypesGrid .tile {
+      cursor: pointer;
+    }
+
+    .cover {
+      height: 185px;
+      background: linear-gradient(
+        135deg,
+        #173f59,
+        #5b777a 55%,
+        #b7a071
+      );
+      display: grid;
+      place-items: center;
+      color: white;
+      font-family: Georgia, serif;
+      font-size: 41px;
+    }
+
+    .tile img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      display: block;
+      background: #edf1f4;
+    }
+
+    .tile .body {
+      padding: 17px;
+      min-width: 0;
+    }
+
+    .tile h3 {
+      margin: 0 0 8px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 17px;
+      font-weight: 650;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    /* TOOLBAR */
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .toolbar h2 {
+      margin: 0;
+    }
+
+    /* ADMIN PANEL */
+
+    .panel {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 28px;
+      border-radius: 16px;
+      margin: 24px 0;
+      box-shadow: 0 8px 30px rgba(12,36,55,.07);
+    }
+
+    #adminPanel {
+      scroll-margin-top: 25px;
+    }
+
+    #adminPanel h2 {
+      margin-top: 0;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel label {
+      display: block;
+      margin: 15px 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .panel input:not([type="checkbox"]):not([type="file"]),
+    .panel select {
+      display: block;
+      width: 100%;
+      max-width: 450px;
+      padding: 11px 13px;
+      margin-top: 7px;
+      border: 1px solid #cbd5dd;
+      border-radius: 8px;
+      background: white;
+      color: var(--navy);
+      font-weight: 400;
+    }
+
+    .panel input[type="file"] {
+      display: block;
+      max-width: 100%;
+      margin-top: 8px;
+      font-weight: 400;
+    }
+
+    .panel input[type="checkbox"] {
+      accent-color: var(--navy-light);
+      margin-right: 5px;
+    }
+
+    #loginBox {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #loginBox input {
+      margin: 0;
+      min-width: 200px;
+      flex: 1 1 220px;
+    }
+
+    #adminTools h3 {
+      margin-top: 28px;
+    }
+
+    .progress {
+      padding: 12px 0;
+      color: #285571;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* PHOTO ACTIONS */
+
+    .photo-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+
+    .photo-actions button {
+      padding: 8px 11px;
+      font-size: 13px;
+    }
+
+    .photo-actions input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--navy-light);
+      cursor: pointer;
+    }
+
+    /* IMAGE VIEWER */
+
+    .hidden {
+      display: none !important;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      background: rgba(4,16,26,.96);
+    }
+
+    .modal img {
+      max-width: 94vw;
+      max-height: 80vh;
+      object-fit: contain;
+    }
+
+    .modal .close {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+    }
+
+    .modal .prev {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .modal .next {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .modal .download {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      background: var(--gold);
+      color: var(--navy);
+    }
+
+    /* NOTICES / FOOTER */
+
+    #notice {
+      min-height: 25px;
+      color: #b44b3b;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 24px 16px;
+      color: #81919a;
+      font-size: 13px;
+      border-top: 1px solid #e5e9ed;
+    }
+
+    /* TABLET */
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 15px;
+      }
+
+      .hero {
+        padding: 48px 20px;
+      }
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 550px) {
+      header {
+        padding: 16px;
+        gap: 14px;
+      }
+
+      .brand {
+        font-size: 17px;
+        letter-spacing: 1px;
+      }
+
+      .sub {
+        font-size: 9px;
+        letter-spacing: 2px;
+      }
+
+      .header-actions {
+        gap: 7px;
+      }
+
+      #lang {
+        padding: 9px 5px;
+        max-width: 115px;
+        font-size: 13px;
+      }
+
+      #adminBtn {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      main {
+        padding: 18px 12px 45px;
+      }
+
+      .hero {
+        padding: 38px 16px;
+        border-radius: 13px;
+        margin-bottom: 32px;
+      }
+
+      .hero h1 {
+        font-size: 30px;
+      }
+
+      .hero p {
+        font-size: 14px;
+      }
+
+      h2 {
+        font-size: 21px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 10px;
+      }
+
+      .cover,
+      .tile img {
+        height: 132px;
+      }
+
+      .cover {
+        font-size: 30px;
+      }
+
+      .tile .body {
+        padding: 12px;
+      }
+
+      .tile h3 {
+        font-size: 15px;
+        line-height: 1.4;
+      }
+
+      .panel {
+        padding: 17px;
+      }
+
+      .toolbar {
+        gap: 8px;
+      }
+
+      .toolbar button {
+        font-size: 13px;
+        padding: 9px 11px;
+      }
+
+      .modal .prev,
+      .modal .next {
+        padding: 8px 10px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .tile,
+      button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div>
+      <div class="brand">
+        SAO MAI PHU MY RESORT
+      </div>
+      <div class="sub">
+        PHOTO GALLERY
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <select id="lang" aria-label="Ngôn ngữ">
+        <option value="vi">Tiếng Việt</option>
+        <option value="en">English</option>
+        <option value="zh">中文</option>
+        <option value="ko">한국어</option>
+      </select>
+
+      <button id="adminBtn" class="gold" type="button">
+        Quản trị
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- HERO -->
+    <section class="hero">
+      <span class="pill">
+        SAO MAI PHU MY RESORT
+      </span>
+
+      <h1 id="heroTitle">
+        Thư viện hình ảnh
+      </h1>
+
+      <p id="heroDesc">
+        Khám phá không gian nghỉ dưỡng, hội nghị và thể thao
+      </p>
+    </section>
+
+    <!-- NOTIFICATION -->
+    <div id="notice" role="status" aria-live="polite"></div>
+
+    <!-- HOME -->
+    <section id="home">
+      <h2 id="serviceTitle">
+        Không gian & dịch vụ
+      </h2>
+
+      <div id="serviceGrid" class="grid"></div>
+
+      <h2 id="eventTitle">
+        Album sự kiện
+      </h2>
+
+      <div id="eventGrid" class="grid"></div>
+    </section>
+
+    <!-- ROOM TYPES -->
+    <section id="roomTypesView" class="hidden">
+      <div class="toolbar">
+        <button id="roomBack" class="secondary" type="button">
+          ← Trở về
+        </button>
+
+        <h2 id="roomHeading">
+          Các hạng phòng
+        </h2>
+      </div>
+
+      <p class="muted">
+        Chọn hạng phòng để xem hình ảnh chi tiết.
+      </p>
+
+      <div id="roomTypesGrid" class="grid"></div>
+    </section>
+
+    <!-- ALBUM DETAIL -->
+    <section id="albumView" class="hidden">
+      <div class="toolbar">
+        <button id="back" class="secondary" type="button">
+          ← Trở về
+        </button>
+
+        <h2 id="albumTitle"></h2>
+      </div>
+
+      <p id="albumDesc" class="muted"></p>
+
+      <div class="toolbar">
+        <button id="selectAll" class="secondary" type="button">
+          Chọn tất cả
+        </button>
+
+        <button id="downloadZip" type="button">
+          Tải ảnh đã chọn (ZIP)
+        </button>
+
+        <span id="selectedCount" class="muted"></span>
+      </div>
+
+      <div id="photoGrid" class="grid"></div>
+    </section>
+
+    <!-- ADMIN PANEL -->
+    <section id="adminPanel" class="panel hidden">
+      <h2>Quản trị thư viện</h2>
+
+      <!-- LOGIN -->
+      <div id="loginBox">
+        <input
+          id="password"
+          type="password"
+          placeholder="Mật khẩu quản trị"
+          autocomplete="current-password"
+          aria-label="Mật khẩu quản trị"
+        >
+
+        <button id="login" type="button">
+          Đăng nhập
+        </button>
+      </div>
+
+      <!-- ADMIN TOOLS -->
+      <div id="adminTools" class="hidden">
+        <button id="logout" class="secondary" type="button">
+          Đăng xuất
+        </button>
+
+        <h3>Tạo album sự kiện hoặc hạng phòng</h3>
+
+        <label>
+          Loại album
+          <select id="newCategory">
+            <option value="events">Sự kiện</option>
+            <option value="room-types">Hạng phòng nghỉ</option>
+          </select>
+        </label>
+
+        <label>
+          Tên album
+          <input
+            id="newTitle"
+            type="text"
+            maxlength="120"
+            placeholder="Ví dụ: Hội nghị tháng 11"
+          >
+        </label>
+
+        <label>
+          Mô tả
+          <input
+            id="newDesc"
+            type="text"
+            maxlength="500"
+            placeholder="Mô tả ngắn"
+          >
+        </label>
+
+        <label>
+          <input id="privateAlbum" type="checkbox">
+          Album có mật khẩu
+        </label>
+
+        <label>
+          Mật khẩu album
+          <input
+            id="albumPassword"
+            type="password"
+            placeholder="Chỉ dùng khi bật riêng tư"
+            autocomplete="new-password"
+          >
+        </label>
+
+        <button id="createAlbum" type="button">
+          Tạo album
+        </button>
+
+        <h3>Upload ảnh</h3>
+
+        <label>
+          Album
+          <select id="uploadAlbum"></select>
+        </label>
+
+        <label>
+          Chọn nhiều ảnh
+          <input
+            id="files"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+          >
+        </label>
+
+        <button id="upload" type="button">
+          Upload ảnh
+        </button>
+
+        <div
+          id="uploadStatus"
+          class="progress"
+          role="status"
+          aria-live="polite"
+        ></div>
+
+        <p class="muted">
+          Tối đa 15 MB mỗi ảnh.
+          Không giới hạn cố định số ảnh chọn mỗi lượt.
+          Ảnh gốc được giữ nguyên chất lượng.
+          Ảnh xem trước được tạo trên thiết bị.
+          Tổng dung lượng chịu giới hạn lưu trữ của hệ thống.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- IMAGE VIEWER -->
+  <div id="viewer" class="modal hidden" role="dialog" aria-label="Xem ảnh">
+    <button class="close" type="button" aria-label="Đóng">
+      ✕
+    </button>
+
+    <button class="prev" type="button" aria-label="Ảnh trước">
+      ‹
+    </button>
+
+    <img id="bigImage" alt="Ảnh Sao Mai Phu My Resort">
+
+    <button class="next" type="button" aria-label="Ảnh tiếp theo">
+      ›
+    </button>
+
+    <button
+      class="download"
+      id="downloadOriginal"
+      type="button"
+    >
+      Tải ảnh gốc
+    </button>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    © Sao Mai Phu My Resort · Photo Gallery
+  </footer>
+
+  <!-- JAVASCRIPT -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="/app.js"></script>
+
+</body>
+</html>
