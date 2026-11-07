@@ -104,6 +104,18 @@ function photoURL(p, original = false, download = false) {
 
 async function refresh() {
   try {
+    const icons = {
+      center1: '01',
+      center2: '02',
+      rooms: '⌂',
+      pickleball: '◉',
+      tennis: '◉',
+      'vip-dining': '✧',
+      gym: '◆',
+      pool: '≈',
+      poolside: '♨'
+    };
+
     const data = await req('/albums');
     albums = data.albums || [];
 
