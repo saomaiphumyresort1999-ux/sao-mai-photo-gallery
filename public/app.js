@@ -634,6 +634,29 @@ async function makePreview(file) {
   });
 }
 
+// Nhận diện PNG/JPEG/WebP/GIF cả khi Windows không gửi MIME.
+function uploadMime(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  const byExtension = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif'
+  };
+  return byExtension[ext] || (
+    ['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)
+      ? file.type : ''
+  );
+}
+
+async function safePreview(file) {
+  // Không gửi preview vượt 2MB. Ảnh gốc luôn giữ nguyên.
+  const preview = await makePreview(file);
+  return preview && preview.size > 0 && preview.size <= 2 * 1024 * 1024
+    ? preview : null;
+}
+
 // UPLOAD ẢNH - KHÔNG GIỚI HẠN SỐ ẢNH CHỌN
 $('#upload').onclick = async () => {
   const files = [...$('#files').files];
@@ -658,12 +681,20 @@ $('#upload').onclick = async () => {
           throw Error('Ảnh vượt 15 MB');
         }
 
+        const mime = uploadMime(f);
+        if (!mime) throw Error('Chỉ nhận PNG, JPG, JPEG, WebP, GIF');
+        if (f.size === 0) throw Error('File ảnh rỗng');
+
+        // API sẽ kiểm tra chữ ký thật của ảnh, không tin MIME từ trình duyệt.
+        const normalized = new File([f], f.name, {
+          type: mime,
+          lastModified: f.lastModified
+        });
         const fd = new FormData();
-
         fd.append('albumId', albumId);
-        fd.append('file', f);
+        fd.append('file', normalized, f.name);
 
-        const preview = await makePreview(f);
+        const preview = await safePreview(normalized);
 
         if (preview) {
           fd.append(
